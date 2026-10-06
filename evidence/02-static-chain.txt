@@ -1,0 +1,27 @@
+== Static chain (addresses are virtual addresses in /mnt/mtd/aoni_ipc) ==
+
+[A] Trigger chain (production/provisioning path)
+  pf_cfg_is_product_mode(0x47c7e0) -> is_file_exist("/mnt/sd_card/productmode/productmode.sh")
+  System_Platform_init(0x472a80) -> product_mode_start(0x472500) -> aoni_product_main(0x48e980)
+  aoni_product_cmd_handle(0x48d1a0) -> produst_sdcar_process(0x489de0)
+  produst_set_mac_addr(0x4834e8) -> mydlink_set_dev_mac(0x4912bc) -> mydlink_set_root_pwd(0x4911a8)
+
+[B] Password generation (mydlink_set_root_pwd; command strings taken verbatim from .rodata)
+  0x4911ec  jal mydlink_get_dev_model          ; model string (DCS-6501LH)
+  0x491200  jal _str_toupper                   ; uppercase applied to the MAC only
+  0x6baf94  socket_system( echo -n "%s-%s" > %s )
+  0x6bafbc  socket_system( echo `md5sum %s | head -c 8` > %s )
+  0x6bafec  socket_system( echo `md5sum %s | head -c 8` >> %s )
+  0x6bb010  socket_system( passwd root < %s )
+
+  Example: input "DCS-6501LH-12:32:45:78:45:22"
+           md5 = 7b4e9a9a67cfc3c4352bdedc399813d2  ->  root password = 7b4e9a9a
+
+[C] Telnet startup (mydlink_open_telnet 0x497180, called from pf_mydlink_init 0x497a2c at boot)
+  0x49718c  jal is_file_exist("/mnt/sd_card/telnet_open")     ; 0x6bc8c4
+  0x497194  bnez v0, 0x4971ac                                 ; file present -> do NOT start Telnet
+  0x4971a0  jal socket_system("telnetd &")                    ; file absent -> start Telnet daemon
+
+[D] Authentication consumer
+  usr/sbin/telnetd is the firmware BusyBox; telnetd spawns /bin/login, which authenticates root against
+  /mnt/conf/passwd (the account store written in [B]).
